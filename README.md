@@ -10,6 +10,7 @@ The latest version uses a BMP180 pressure sensor, however the code is identical.
 <img src="/pictures/AltiUno-bmp180.jpg" width="49%">
 
 An smt board using the same code also exist and can be used in smaller rocket.
+<img src="/pictures/altiUno-smt.jpg" width="49%">
 
 # Building the code
 You will need to download the Arduino ide from the [Arduino web site](https://www.arduino.cc/).
