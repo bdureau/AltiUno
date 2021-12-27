@@ -1,6 +1,6 @@
 /*
-  Model Rocket single deployment altimeter Ver 1.0
- Copyright Boris du Reau 2012-2013
+  Model Rocket single deployment altimeter Ver 1.4
+ Copyright Boris du Reau 2012-2021
  
  This is using a BMP085 presure sensor and an Attiny 85
  The following should fire the main at apogee if it is at least 50m above ground of the launch site
@@ -37,7 +37,7 @@ long lastAltitude;
 //Our drogue has been ejected i.e: apogee has been detected
 boolean apogeeHasFired =false;
 //nbr of measures to do so that we are sure that apogee has been reached 
-unsigned long measures;
+unsigned long measures =5;
 
 
 // those have been changed for the ATtiny 85
@@ -79,25 +79,34 @@ void setup()
   //Wire.begin();
   TinyWireM.begin();
   //Presure Sensor Initialisation
-  bmp.begin();
+  //bmp.begin();
+ // bmp.begin( BMP085_STANDARD);
+     //Low res should work better at high speed
+  bmp.begin( BMP085_ULTRALOWPOWER);
+  //initialisation give the version of the altimeter
+  //One long beep per major number and One short beep per minor revision
+  //For example version 1.2 would be one long beep and 2 short beep
+  beepAltiVersion(1,4);
   
-  //initialisation
-  beginBeepSeq();
   //our drogue has not been fired
   apogeeHasFired=false;
+  // let's do some dummy altitude reading
+  // to initialise the Kalman filter
+  for (int i=0; i<50; i++){
+    KalmanCalc(bmp.readAltitude());
+   }
   //let's read the lauch site altitude
   long sum = 0;
   for (int i=0; i<10; i++){
       sum += KalmanCalc(bmp.readAltitude());
-    delay(500); }
+    delay(50); }
   initialAltitude = (sum / 10.0);
   
-  lastAltitude = initialAltitude; 
-  liftoffAltitude = initialAltitude + 20;
+  lastAltitude = 0; 
+  liftoffAltitude =  20;
   //number of measures to do to detect Apogee
-  measures = 10;
-//if (liftoffAltitude <0) {initialAltitude=liftoffAltitude*(-1);}
-//beepAltitude(initialAltitude);
+  measures = 5;
+
 }
 
 void loop()
@@ -123,13 +132,14 @@ void loop()
         delay (2000);
         apogeeHasFired=true;
         digitalWrite(pinApogee, LOW);
-        apogeeAltitude = currAltitude;
+        //apogeeAltitude = currAltitude;
+        apogeeAltitude = lastAltitude;
       }  
     }
     else 
     {
       lastAltitude = currAltitude;
-      measures = 10;
+      measures = 5;
     } 
   }
 
@@ -274,3 +284,16 @@ float KalmanCalc (float altitude)
    //KAlt = kalman_x; //FLOAT Kalman-filtered altitude value
   return kalman_x;
 }  
+
+void beepAltiVersion (int majorNbr, int minorNbr)
+{
+  int i;
+  for (i=0; i<majorNbr;i++)
+  {
+    longBeep();
+  }
+  for (i=0; i<minorNbr;i++)
+  {
+    shortBeep();
+  }  
+}
