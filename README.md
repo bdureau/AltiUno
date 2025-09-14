@@ -21,3 +21,6 @@ You will need to use an AVR programmer and an adapter to program the microcotrol
 
 # Using other pressure sensors
 Unfortunatly it is not possible to use a bmp280 sensor, I have ported the library but unfortunatly the attiny 85 has not enought on board memory.
+
+# Quick altimeter Presentation 
+You can take a look at the following YouTube video for a quick overview of the altimeter
