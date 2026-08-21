@@ -1,6 +1,6 @@
 /*
-  Model Rocket single deployment altimeter Ver 1.4
- Copyright Boris du Reau 2012-2021
+  Model Rocket single deployment altimeter Ver 1.6
+ Copyright Boris du Reau 2012-2026
  
  This is using a BMP085 presure sensor and an Attiny 85
  The following should fire the main at apogee if it is at least 50m above ground of the launch site
@@ -20,7 +20,9 @@
  */
 
 #include <TinyWireM.h>
-#include <tinyBMP085.h>
+#include "tinyBearBMP085.h"
+#define MAJOR_VERSION 1
+#define MINOR_VERSION 6
 
 #define DEBUG //=true
 
@@ -76,17 +78,26 @@ void setup()
 
   //init Kalman filter
   KalmanInit();
-  //Wire.begin();
+
   TinyWireM.begin();
   //Presure Sensor Initialisation
-  //bmp.begin();
- // bmp.begin( BMP085_STANDARD);
-     //Low res should work better at high speed
-  bmp.begin( BMP085_ULTRALOWPOWER);
+  //Low res should work better at high speed
+  //bmp.begin( BMP085_ULTRALOWPOWER);
+  if (!bmp.begin( BMP085_ULTRALOWPOWER))
+  {
+    while (1) {
+      shortBeep();
+      delay(500);
+      shortBeep();
+      delay(500);
+      longBeep();
+      delay(500);
+    }
+  }
   //initialisation give the version of the altimeter
   //One long beep per major number and One short beep per minor revision
   //For example version 1.2 would be one long beep and 2 short beep
-  beepAltiVersion(1,4);
+  beepAltiVersion(MAJOR_VERSION,MINOR_VERSION);
   
   //our drogue has not been fired
   apogeeHasFired=false;
@@ -97,10 +108,10 @@ void setup()
    }
   //let's read the lauch site altitude
   long sum = 0;
-  for (int i=0; i<10; i++){
+  for (int i=0; i<50; i++){
       sum += KalmanCalc(bmp.readAltitude());
     delay(50); }
-  initialAltitude = (sum / 10.0);
+  initialAltitude = (sum / 50.0);
   
   lastAltitude = 0; 
   liftoffAltitude =  20;
@@ -113,7 +124,7 @@ void loop()
 {
   //read current altitude
   currAltitude = (KalmanCalc(bmp.readAltitude())- initialAltitude);
-  if (( currAltitude > liftoffAltitude) != true)
+  if (!( currAltitude > liftoffAltitude))
   {
     continuityCheck(pinApogeeContinuity);
   }
@@ -132,7 +143,6 @@ void loop()
         delay (2000);
         apogeeHasFired=true;
         digitalWrite(pinApogee, LOW);
-        //apogeeAltitude = currAltitude;
         apogeeAltitude = lastAltitude;
       }  
     }
@@ -143,7 +153,7 @@ void loop()
     } 
   }
 
-  if(apogeeHasFired == true)
+  if(apogeeHasFired)
   {
     beepAltitude(apogeeAltitude);
   }
@@ -153,7 +163,7 @@ void continuityCheck(int pin)
 {
   int val = 0;     // variable to store the read value
   // read the input pin to check the continuity if apogee has not fired
-  if (apogeeHasFired == false )
+  if (!apogeeHasFired)
   {
     val = digitalRead(pin);   
     if (val == 0)
@@ -211,7 +221,7 @@ void beepAltitude(long altitude)
 void beginBeepSeq()
 {
   int i=0;
-  if (NoBeep == false)
+  if (!NoBeep)
   {
     for (i=0; i<10;i++)
     {
@@ -224,7 +234,7 @@ void beginBeepSeq()
 }
 void longBeep()
 {
-  if (NoBeep == false)
+  if (!NoBeep)
   {
     tone(pinSpeaker, 600,1000);
     delay(1500);
@@ -233,7 +243,7 @@ void longBeep()
 }
 void shortBeep()
 {
-  if (NoBeep == false)
+  if (!NoBeep)
   {
     tone(pinSpeaker, 600,25);
     delay(300);
